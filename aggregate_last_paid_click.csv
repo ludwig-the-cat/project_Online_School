@@ -1,4 +1,4 @@
-"visit_date","utm_source","utm_medium","utm_campaign","visitors_count","total_cost","leads_count","purchase_count","revenue"
+"visit_date","utm_source","utm_medium","utm_campaign","visitors_count","total_cost","leads_count","purchases_count","revenue"
 "2023-06-01",yandex,cpc,freemium,103,2230362,100,25,1654810
 "2023-06-01",yandex,cpc,prof-frontend,78,4456764,73,12,1057000
 "2023-06-01",yandex,cpc,prof-python,62,2047612,61,7,613196

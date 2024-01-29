@@ -82,7 +82,7 @@ select
                 lpu.status_id = '142'
                 then '1'
         end
-    ) as purchase_count,
+    ) as purchases_count,
     sum(
         case
             when
