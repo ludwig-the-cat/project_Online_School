@@ -9,7 +9,7 @@ WITH last_click AS (
     GROUP BY visitor_id
 ),
 /*создаем CTE для агрегации по дате создания, utm_меткам и лидам и их статусу*/
-    
+  
 last_paid_click AS (
     SELECT
         l_c.visitor_id,
@@ -32,7 +32,7 @@ last_paid_click AS (
             l_c.visitor_id = l.visitor_id
             AND l_c.visit_date <= l.created_at
 ),
-    
+
 /*агрегация по Utm метакам в рамках компаний VK и Ya*/
 ads AS (
     SELECT
@@ -53,7 +53,7 @@ ads AS (
         utm_source,
         utm_medium,
         utm_campaign,
-        SUM(daily_spent) as total_cost
+        SUM(daily_spent) AS total_cost
     FROM ya_ads
     GROUP BY
         TO_CHAR(campaign_date, 'yyyy-mm-dd'),
@@ -70,7 +70,7 @@ agg_tab AS (
         TO_CHAR(visit_date, 'yyyy-mm-dd') AS visit_date,
         COUNT(DISTINCT visitor_id) AS visitors_count,
         COUNT(lead_id) AS leads_count,
-        COUNT(lead_id) filter (
+        COUNT(lead_id) FILTER (
             WHERE
             closing_reason = 'Успешно реализовано'
             OR status_id = 142
@@ -102,10 +102,10 @@ LEFT JOIN ads
         AND ag.utm_medium = ads.utm_medium
         AND ag.utm_campaign = ads.utm_campaign
 ORDER BY
-    ag.revenue DESC nulls LAST,
+    ag.revenue DESC NULLS LAST,
     ag.visit_date ASC,
     ag.visitors_count DESC,
     ag.utm_source ASC,
     ag.utm_medium ASC,
     ag.utm_campaign ASC
-    LIMIT 15;
+LIMIT 15;
