@@ -1,31 +1,29 @@
 /* Витрина для модели атрибуции Last Paid Click */
 /* Создаём подзапрос в котором находим необходимые поля по условиям */
 /* + добавляем row_number в разрезе id пользователей */
-with temp as (
-    select
-        s.visitor_id,
-        s.visit_date,
-        s.source as utm_source,
-        s.medium as utm_medium,
-        s.campaign as utm_campaign,
-        l.lead_id,
-        l.created_at,
-        l.amount,
-        l.closing_reason,
-        l.status_id,
-        row_number() over (partition by s.visitor_id order by s.visit_date desc)
-        as rn
+WITH temp AS (
+    SELECT
+    s.visitor_id,
+    s.visit_date,
+    s.source AS utm_source,
+    s.medium AS utm_medium,
+    s.campaign AS utm_campaign,
+    l.lead_id, 
+    l.created_at,
+    l.amount,
+    l.closing_reason,
+    l.status_id,
+    row_number() over (partition BY s.visitor_id ORDER BY s.visit_date DESC)
+        AS rn
     /* Нумеруем users id, с сортировкой по совершившим последнюю покупку*/
-    from sessions as s
-    left join leads as l
-        on
-            s.visitor_id = l.visitor_id
-            and s.visit_date <= l.created_at
-    where
-        s.medium in ('cpc', 'cpm', 'cpa', 'youtube', 'cpp', 'tg', 'social')
+    FROM sessions AS s
+    LEFT JOIN leads AS l
+    ON s.visitor_id = l.visitor_id
+    AND s.visit_date <= l.created_at
+    WHERE s.medium IN ('cpc', 'cpm', 'cpa', 'youtube', 'cpp', 'tg', 'social')
 )
 
-select
+SELECT
     visitor_id,
     visit_date,
     utm_source,
@@ -36,13 +34,13 @@ select
     amount,
     closing_reason,
     status_id
-from temp
-where
+FROM temp
+WHERE
     rn = '1'
-order by
-    amount desc nulls last,
-    visit_date asc,
-    utm_source asc,
-    utm_medium asc,
-    utm_campaign asc
-limit 10;
+ORDER BY
+    amount DESC nulls LAST,
+    visit_date ASC,
+    utm_source ASC,
+    utm_medium ASC,
+    utm_campaign ASC
+LIMIT 10;
