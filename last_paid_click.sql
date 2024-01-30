@@ -18,9 +18,9 @@ WITH temp AS (
     /* Нумеруем users id, с сортировкой по совершившим последнюю покупку*/
     FROM sessions AS s
     LEFT JOIN leads AS l
-    ON 
+    	ON
             s.visitor_id = l.visitor_id
-				AND s.visit_date <= l.created_at
+            AND s.visit_date <= l.created_at
     WHERE s.medium IN ('cpc', 'cpm', 'cpa', 'youtube', 'cpp', 'tg', 'social')
 )
 
