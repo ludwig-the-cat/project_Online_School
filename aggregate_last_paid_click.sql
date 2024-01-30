@@ -9,7 +9,7 @@ WITH last_click AS (
     GROUP BY visitor_id
 ),
 /*создаем CTE для агрегации по дате создания, utm_меткам и лидам и их статусу*/
-  
+
 last_paid_click AS (
     SELECT
         l_c.visitor_id,
