@@ -228,7 +228,7 @@ WITH last_click AS (
     FROM sessions
     WHERE
         LOWER(medium) IN ('cpc', 'cpm', 'cpa', 'youtube', 'cpp', 'tg', 'social')
-        GROUP BY visitor_id
+    GROUP BY visitor_id
 ),
 /*создаем CTE для агрегации по дате создания, utm_меткам и лидам и их статусу*/
 
@@ -330,4 +330,4 @@ ORDER BY
     ag.utm_source ASC,
     ag.utm_medium ASC,
     ag.utm_campaign ASC
-    LIMIT 15;
+LIMIT 15;
