@@ -228,16 +228,17 @@ WITH last_click AS (
     FROM sessions
     WHERE
         LOWER(medium) IN ('cpc', 'cpm', 'cpa', 'youtube', 'cpp', 'tg', 'social')
-   GROUP BY visitor_id
+        GROUP BY visitor_id
 ),
-/*создаем CTE для агрегации по дате создания, utm_меткам и лидам и их статусу*/ 
+/*создаем CTE для агрегации по дате создания, utm_меткам и лидам и их статусу*/
+
 last_paid_click AS (
     SELECT
         l_c.visitor_id,
         l_c.visit_date,
         s.source AS utm_source,
         s.medium AS utm_medium,
-        s.campaign As utm_campaign,
+        s.campaign AS utm_campaign,
         l.lead_id,
         l.created_at,
         l.amount,
@@ -253,6 +254,7 @@ last_paid_click AS (
             l_c.visitor_id = l.visitor_id
             AND l_c.visit_date <= l.created_at
 ),
+
 /*агрегация по Utm метакам в рамках компаний VK и Ya*/
 ads AS (
     SELECT
