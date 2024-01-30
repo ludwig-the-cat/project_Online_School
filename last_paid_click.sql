@@ -3,8 +3,8 @@
 /* + добавляем row_number в разрезе id пользователей */
 WITH temp AS (
     SELECT
-            s.visitor_id,
-            s.visit_date,
+        s.visitor_id,
+        s.visit_date,
         s.source AS utm_source,
         s.medium AS utm_medium,
         s.campaign AS utm_campaign,
@@ -18,9 +18,9 @@ WITH temp AS (
     /* Нумеруем users id, с сортировкой по совершившим последнюю покупку*/
     FROM sessions AS s
     LEFT JOIN leads AS l
-        ON 
+    ON 
             s.visitor_id = l.visitor_id
-    AND s.visit_date <= l.created_at
+                AND s.visit_date <= l.created_at
     WHERE s.medium IN ('cpc', 'cpm', 'cpa', 'youtube', 'cpp', 'tg', 'social')
 )
 
@@ -39,7 +39,7 @@ FROM temp
 WHERE
     rn = '1'
 ORDER BY
-    amount DESC nulls LAST,
+    amount DESC NULLS LAST,
     visit_date ASC,
     utm_source ASC,
     utm_medium ASC,
