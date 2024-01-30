@@ -3,8 +3,8 @@
 /* + добавляем row_number в разрезе id пользователей */
 WITH temp AS (
     SELECT
-        s.visitor_id,
-        s.visit_date,
+            s.visitor_id,
+            s.visit_date,
         s.source AS utm_source,
         s.medium AS utm_medium,
         s.campaign AS utm_campaign,
