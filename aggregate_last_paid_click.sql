@@ -1,117 +1,109 @@
-/* Витрина для модели атрибуции Last Paid Click_агрегированная */
-/* Запрос объединяет таблицы рекламных кампаний в ВК и Яндексе */
-with vk_and_yandex as (
+/*Делаем CTE чтобы агрегировать посетелей по последнему клику*/
+with last_click as (
     select
-        to_char(
-            campaign_date, 'YYYY-MM-DD'
-        )
-        as campaign_date,
-        utm_source,
-        utm_medium,
-        utm_campaign,
-        sum(daily_spent) as total_cost
-    from
-        vk_ads
-    group by
-        1,
-        2,
-        3,
-        4
-    union all
-    select
-        to_char(
-            campaign_date, 'YYYY-MM-DD'
-        )
-        as campaign_date,
-        utm_source,
-        utm_medium,
-        utm_campaign,
-        sum(daily_spent) as total_cost
-    from
-        ya_ads
-    group by
-        1,
-        2,
-        3,
-        4
+        visitor_id,
+        MAX(visit_date) as visit_date
+    from sessions
+    where
+        LOWER(medium) in ('cpc', 'cpm', 'cpa', 'youtube', 'cpp', 'tg', 'social')
+    group by visitor_id
 ),
-
-/* Создаём подзапрос в котором соединяем таблицы сессий и лидов */
-last_paid_users as (
+/*создаем CTE для агрегации по дате создания, utm_меткам и лидам и их статусу*/ 
+last_paid_click as (
     select
+        l_c.visitor_id,
+        l_c.visit_date,
         s.source as utm_source,
         s.medium as utm_medium,
         s.campaign as utm_campaign,
-        s.visitor_id,
         l.lead_id,
-        l.status_id,
-        l.closing_reason,
+        l.created_at,
         l.amount,
-        to_char(
-            s.visit_date, 'YYYY-MM-DD'
-        )
-        as visit_date,
-        row_number() over (
-            partition by s.visitor_id
-            order by s.visit_date desc
-        ) as rn
-    /* Нумеруем пользователей совершивших последний платный клик */
-    from
-        sessions as s
+        l.closing_reason,
+        l.status_id
+    from last_click as l_c
+    inner join sessions as s
+        on
+            l_c.visitor_id = s.visitor_id
+            and l_c.visit_date = s.visit_date
     left join leads as l
         on
-            s.visitor_id = l.visitor_id
-            and s.visit_date <= l.created_at
-    where
-        s.medium in ('cpc', 'cpm', 'cpa', 'youtube', 'cpp', 'tg', 'social')
-/* Находим пользователей только с платными кликами */
+            l_c.visitor_id = l.visitor_id
+            and l_c.visit_date <= l.created_at
+),
+/*агрегация по Utm метакам в рамках компаний VK и Ya*/
+ads as (
+    select
+        TO_CHAR(campaign_date, 'yyyy-mm-dd') as campaign_date,
+        utm_source,
+        utm_medium,
+        utm_campaign,
+        SUM(daily_spent) as total_cost
+    from vk_ads
+    group by
+        TO_CHAR(campaign_date, 'yyyy-mm-dd'),
+        utm_source,
+        utm_medium,
+        utm_campaign
+    union all
+    select
+        TO_CHAR(campaign_date, 'yyyy-mm-dd') as campaign_date,
+        utm_source,
+        utm_medium,
+        utm_campaign,
+        SUM(daily_spent) as total_cost
+    from ya_ads
+    group by
+        TO_CHAR(campaign_date, 'yyyy-mm-dd'),
+        utm_source,
+        utm_medium,
+        utm_campaign
+),
+
+agg_tab as (
+    select
+        utm_source,
+        utm_medium,
+        utm_campaign,
+        TO_CHAR(visit_date, 'yyyy-mm-dd') as visit_date,
+        COUNT(distinct visitor_id) as visitors_count,
+        COUNT(lead_id) as leads_count,
+        COUNT(lead_id) filter (
+            where
+            closing_reason = 'Успешно реализовано'
+            or status_id = 142
+        ) as purchases_count,
+        SUM(amount) as revenue
+    from last_paid_click
+    group by
+        TO_CHAR(visit_date, 'yyyy-mm-dd'),
+        utm_source,
+        utm_medium,
+        utm_campaign
 )
 
 select
-    /* В основном запросе находим необходимые по условию поля */
-    lpu.visit_date,
-    lpu.utm_source,
-    lpu.utm_medium,
-    lpu.utm_campaign,
-    count(lpu.visitor_id) as visitors_count,
-    sum(vy.total_cost) as total_cost,
-    count(lpu.lead_id) as leads_count,
-    count(
-        case
-            when
-                lpu.status_id = '142'
-                then '1'
-        end
-    ) as purchases_count,
-    sum(
-        case
-            when
-                lpu.status_id = '142'
-                then lpu.amount
-        end
-    ) as revenue
-from
-    last_paid_users as lpu
-left join vk_and_yandex as vy
-    /* Соединяем по utm-меткам и дате проведения кампании */
+    ag.visit_date,
+    ag.visitors_count,
+    ag.utm_source,
+    ag.utm_medium,
+    ag.utm_campaign,
+    ads.total_cost,
+    ag.leads_count,
+    ag.purchases_count,
+    ag.revenue
+from agg_tab as ag
+left join ads
     on
-        lpu.utm_source = vy.utm_source
-        and lpu.utm_medium = vy.utm_medium
-        and lpu.utm_campaign = vy.utm_campaign
-        and lpu.visit_date = vy.campaign_date
-where
-    lpu.rn = '1'
-/* Оставляем только пользователей с последним платным кликом */
-group by
-    1,
-    2,
-    3,
-    4
+        ag.visit_date = ads.campaign_date
+        and ag.utm_source = ads.utm_source
+        and ag.utm_medium = ads.utm_medium
+        and ag.utm_campaign = ads.utm_campaign
 order by
-    9 desc nulls last,
-    1,
-    6 desc,
-    2,
-    3,
-    4
-limit 15;
+    ag.revenue desc nulls last,
+    ag.visit_date asc,
+    ag.visitors_count desc,
+    ag.utm_source asc,
+    ag.utm_medium asc,
+    ag.utm_campaign asc
+    limit 15;
