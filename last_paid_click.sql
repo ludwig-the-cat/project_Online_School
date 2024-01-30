@@ -8,19 +8,19 @@ WITH temp AS (
         s.source AS utm_source,
         s.medium AS utm_medium,
         s.campaign AS utm_campaign,
-        l.lead_id, 
+        l.lead_id,
         l.created_at,
         l.amount,
         l.closing_reason,
         l.status_id,
-        row_number() over (PARTITION BY s.visitor_id ORDER BY s.visit_date DESC)
+        ROW_NUMBER() OVER (PARTITION BY s.visitor_id ORDER BY s.visit_date DESC)
         AS rn
     /* Нумеруем users id, с сортировкой по совершившим последнюю покупку*/
     FROM sessions AS s
     LEFT JOIN leads AS l
     ON 
             s.visitor_id = l.visitor_id
-                AND s.visit_date <= l.created_at
+				AND s.visit_date <= l.created_at
     WHERE s.medium IN ('cpc', 'cpm', 'cpa', 'youtube', 'cpp', 'tg', 'social')
 )
 
