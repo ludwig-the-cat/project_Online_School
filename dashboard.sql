@@ -346,5 +346,3 @@ ORDER BY
                 THEN lpu.amount
         END
     ) DESC NULLS LAST;
-
-
